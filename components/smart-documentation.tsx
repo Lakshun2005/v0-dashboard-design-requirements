@@ -23,7 +23,7 @@ import {
   MessageSquare,
   Sparkles,
 } from "lucide-react"
-import { useToast } from "@/hooks/use-toast"
+import { toast } from "sonner"
 
 interface DocumentationTemplate {
   id: string
@@ -70,7 +70,6 @@ export function SmartDocumentation() {
   const [isRecording, setIsRecording] = useState(false)
   const [generatedNote, setGeneratedNote] = useState("")
   const [selectedTemplate, setSelectedTemplate] = useState("")
-  const { toast } = useToast()
 
   // Form states for SOAP note generation
   const [patientName, setPatientName] = useState("")
@@ -134,16 +133,13 @@ export function SmartDocumentation() {
       }
 
       setGeneratedNote(result)
-      toast({
-        title: "SOAP Note Generated",
+      toast.success("SOAP Note Generated", {
         description: "Clinical documentation has been created successfully.",
       })
     } catch (error) {
       console.error("Error:", error)
-      toast({
-        title: "Error",
-        description: "Failed to generate SOAP note. Please try again.",
-        variant: "destructive",
+      toast.error("Failed to generate SOAP note", {
+        description: "Please try again.",
       })
     } finally {
       setLoading(false)
@@ -167,16 +163,13 @@ export function SmartDocumentation() {
 
       const result = await response.json()
       setGeneratedNote(result.transcribedNote)
-      toast({
-        title: "Voice Note Transcribed",
+      toast.success("Voice Note Transcribed", {
         description: "Audio has been converted to structured clinical note.",
       })
     } catch (error) {
       console.error("Error:", error)
-      toast({
-        title: "Error",
-        description: "Failed to transcribe voice note. Please try again.",
-        variant: "destructive",
+      toast.error("Failed to transcribe voice note", {
+        description: "Please try again.",
       })
     } finally {
       setLoading(false)
@@ -200,16 +193,13 @@ export function SmartDocumentation() {
 
       const result = await response.json()
       setGeneratedNote(result.extractedInfo)
-      toast({
-        title: "Information Extracted",
+      toast.success("Information Extracted", {
         description: "Medical information has been extracted from the document.",
       })
     } catch (error) {
       console.error("Error:", error)
-      toast({
-        title: "Error",
-        description: "Failed to extract information. Please try again.",
-        variant: "destructive",
+      toast.error("Failed to extract information", {
+        description: "Please try again.",
       })
     } finally {
       setLoading(false)
@@ -218,16 +208,14 @@ export function SmartDocumentation() {
 
   const handleCopyNote = () => {
     navigator.clipboard.writeText(generatedNote)
-    toast({
-      title: "Copied to Clipboard",
+    toast.info("Copied to Clipboard", {
       description: "The generated note has been copied to your clipboard.",
     })
   }
 
   const handleSaveNote = () => {
     // In a real implementation, this would save to the database
-    toast({
-      title: "Note Saved",
+    toast.info("Note Saved", {
       description: "The clinical note has been saved to the patient record.",
     })
   }
@@ -236,14 +224,12 @@ export function SmartDocumentation() {
     setIsRecording(!isRecording)
     if (!isRecording) {
       // Start recording logic would go here
-      toast({
-        title: "Recording Started",
+      toast.info("Recording Started", {
         description: "Voice recording is now active.",
       })
     } else {
       // Stop recording logic would go here
-      toast({
-        title: "Recording Stopped",
+      toast.info("Recording Stopped", {
         description: "Voice recording has been stopped.",
       })
     }
