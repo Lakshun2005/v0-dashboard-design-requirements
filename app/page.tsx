@@ -1,30 +1,32 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import {
   Search,
   Bell,
   Home,
-  Workflow,
+  Users,
   BarChart3,
   Settings,
   AlertTriangle,
-  RefreshCw,
-  MoreHorizontal,
+  ArrowRight,
+  Heart,
+  Calendar,
+  FileText,
+  Activity,
+  Clock,
   Filter,
+  Eye,
+  MoreHorizontal,
+  ChevronDown,
+  UserPlus,
+  Stethoscope,
   TrendingUp,
   TrendingDown,
-  Clock,
-  CheckCircle,
-  XCircle,
-  ChevronDown,
-  Plus,
-  ArrowRight,
-  Users,
-  Eye,
-  Database,
+  Brain,
+  MessageSquare,
 } from "lucide-react"
-import { AreaChart, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Area } from "recharts"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -42,173 +44,212 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Progress } from "@/components/ui/progress"
 import Link from "next/link"
+import { createClient } from "@/lib/supabase/client"
 
-// Sample data
 const metricsData = [
-  { label: "Total Workflows", value: "237", change: "+12%", trend: "up", icon: Workflow },
-  { label: "Success Rate", value: "98.7%", change: "+0.3%", trend: "up", icon: CheckCircle },
-  { label: "Avg Response", value: "38s", change: "-2.1s", trend: "up", icon: Clock },
-  { label: "Active Users", value: "1,423", change: "+8.2%", trend: "up", icon: Users },
+  { label: "Total Patients", value: "1,247", change: "+23", trend: "up", icon: Users },
+  { label: "Today's Appointments", value: "18", change: "+3", trend: "up", icon: Calendar },
+  { label: "Critical Alerts", value: "5", change: "-2", trend: "up", icon: AlertTriangle },
+  { label: "Active Providers", value: "12", change: "+1", trend: "up", icon: Stethoscope },
 ]
 
-const workflowData = [
+const recentPatients = [
   {
-    id: 6734,
-    name: "Product Catalog Sync",
-    started: "22 Jun 2025, 10:48",
-    duration: "45.2s",
-    status: "running",
-    error: null,
+    id: "1",
+    mrn: "MRN001234",
+    name: "John Smith",
+    age: 38,
+    lastVisit: "2025-01-20",
+    condition: "Hypertension",
+    status: "stable",
+    riskLevel: "medium",
   },
   {
-    id: 6733,
-    name: "Customer Webhook Listener",
-    started: "22 Jun 2025, 10:12",
-    duration: "30s",
-    status: "success",
-    error: null,
+    id: "2",
+    mrn: "MRN001235",
+    name: "Sarah Johnson",
+    age: 32,
+    lastVisit: "2025-01-19",
+    condition: "Asthma",
+    status: "stable",
+    riskLevel: "low",
   },
   {
-    id: 6732,
-    name: "Data Enrichment Pipeline",
-    started: "22 Jun 2025, 09:45",
-    duration: "2m 15s",
-    status: "success",
-    error: null,
+    id: "3",
+    mrn: "MRN001236",
+    name: "Robert Davis",
+    age: 46,
+    lastVisit: "2025-01-18",
+    condition: "Hyperlipidemia",
+    status: "monitoring",
+    riskLevel: "medium",
   },
   {
-    id: 6731,
-    name: "Analytics Refresh",
-    started: "22 Jun 2025, 09:30",
-    duration: "1m 8s",
-    status: "success",
-    error: null,
+    id: "4",
+    mrn: "MRN001237",
+    name: "Emily Wilson",
+    age: 29,
+    lastVisit: "2025-01-17",
+    condition: "Anxiety Disorder",
+    status: "improving",
+    riskLevel: "low",
   },
   {
-    id: 6730,
-    name: "Billing Reconciliation",
-    started: "22 Jun 2025, 09:15",
-    duration: "3m 22s",
-    status: "success",
-    error: null,
-  },
-  {
-    id: 6729,
-    name: "Inventory Level Sync",
-    started: "22 Jun 2025, 08:58",
-    duration: "45s",
-    status: "failed",
-    error: "HTTP Error 404: Not Found",
-  },
-  {
-    id: 6728,
-    name: "KYC Data Update",
-    started: "22 Jun 2025, 08:45",
-    duration: "1m 12s",
-    status: "success",
-    error: null,
-  },
-  {
-    id: 6727,
-    name: "Monthly Log Archiver",
-    started: "22 Jun 2025, 08:30",
-    duration: "4m 33s",
-    status: "success",
-    error: null,
+    id: "5",
+    mrn: "MRN001238",
+    name: "Michael Brown",
+    age: 64,
+    lastVisit: "2025-01-16",
+    condition: "Coronary Artery Disease",
+    status: "critical",
+    riskLevel: "high",
   },
 ]
 
-const chartData = [
-  { name: "Jan", sales: 4000, views: 2400, workflows: 240 },
-  { name: "Feb", sales: 3000, views: 1398, workflows: 221 },
-  { name: "Mar", sales: 2000, views: 9800, workflows: 229 },
-  { name: "Apr", sales: 2780, views: 3908, workflows: 200 },
-  { name: "May", sales: 1890, views: 4800, workflows: 218 },
-  { name: "Jun", sales: 2390, views: 3800, workflows: 250 },
-  { name: "Jul", sales: 3490, views: 4300, workflows: 210 },
+const patientVitalsData = [
+  { month: "Jul", patients: 1180, appointments: 890, alerts: 12 },
+  { month: "Aug", patients: 1205, appointments: 920, alerts: 8 },
+  { month: "Sep", patients: 1220, appointments: 945, alerts: 15 },
+  { month: "Oct", patients: 1235, appointments: 980, alerts: 6 },
+  { month: "Nov", patients: 1240, appointments: 1020, alerts: 9 },
+  { month: "Dec", patients: 1247, appointments: 1050, alerts: 5 },
 ]
 
-const teamMembers = [
+const recentAlerts = [
+  { patient: "Michael Brown", alert: "Critical BP Reading", time: "5 minutes ago", priority: "high" },
+  { patient: "John Smith", alert: "Medication Due", time: "15 minutes ago", priority: "medium" },
+  { patient: "Sarah Johnson", alert: "Lab Results Ready", time: "1 hour ago", priority: "low" },
+  { patient: "Robert Davis", alert: "Follow-up Needed", time: "2 hours ago", priority: "medium" },
+  { patient: "Emily Wilson", alert: "Appointment Reminder", time: "3 hours ago", priority: "low" },
+]
+
+const healthcareTeam = [
   {
-    name: "Clara Blackwood",
-    role: "Engineer",
-    status: "online",
-    avatar: "/placeholder.svg?height=32&width=32",
-    availability: "On-call",
-  },
-  {
-    name: "Michael Whitmore",
-    role: "Owner",
+    name: "Dr. Sarah Chen",
+    role: "Cardiologist",
     status: "online",
     avatar: "/placeholder.svg?height=32&width=32",
     availability: "Available",
+    patients: 45,
   },
   {
-    name: "Dennis Brightwood",
-    role: "Engineer",
-    status: "away",
-    avatar: "/placeholder.svg?height=32&width=32",
-    availability: "Available in 2hrs",
-  },
-  {
-    name: "Sarah Chen",
-    role: "Designer",
+    name: "Dr. Michael Rodriguez",
+    role: "Emergency Medicine",
     status: "online",
     avatar: "/placeholder.svg?height=32&width=32",
-    availability: "In meeting",
+    availability: "In Surgery",
+    patients: 32,
   },
-]
-
-const recentActivity = [
-  { workflow: "Product Catalog Sync", time: "2 minutes ago", status: "success", duration: "45s" },
-  { workflow: "Customer Webhook", time: "5 minutes ago", status: "success", duration: "30s" },
-  { workflow: "Data Enrichment", time: "12 minutes ago", status: "success", duration: "2m 15s" },
-  { workflow: "Analytics Refresh", time: "18 minutes ago", status: "success", duration: "1m 8s" },
-  { workflow: "Inventory Sync", time: "32 minutes ago", status: "failed", duration: "45s" },
+  {
+    name: "Nurse Lisa Thompson",
+    role: "ICU Nurse",
+    status: "away",
+    avatar: "/placeholder.svg?height=32&width=32",
+    availability: "On Break",
+    patients: 8,
+  },
+  {
+    name: "Dr. James Wilson",
+    role: "Internal Medicine",
+    status: "online",
+    avatar: "/placeholder.svg?height=32&width=32",
+    availability: "With Patient",
+    patients: 38,
+  },
 ]
 
 export default function Dashboard() {
   const [selectedPeriod, setSelectedPeriod] = useState("Last 30 days")
+  const [patients, setPatients] = useState([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const loadPatients = async () => {
+      try {
+        const supabase = createClient()
+        const { data, error } = await supabase
+          .from("patients")
+          .select(`
+            id,
+            medical_record_number,
+            first_name,
+            last_name,
+            date_of_birth,
+            phone,
+            email,
+            created_at
+          `)
+          .order("created_at", { ascending: false })
+          .limit(10)
+
+        if (error) {
+          console.error("Error loading patients:", error)
+          // Use sample data as fallback
+          setPatients(recentPatients)
+        } else {
+          // Transform Supabase data to match our component structure
+          const transformedPatients = data.map((patient) => ({
+            id: patient.id,
+            mrn: patient.medical_record_number,
+            name: `${patient.first_name} ${patient.last_name}`,
+            age: new Date().getFullYear() - new Date(patient.date_of_birth).getFullYear(),
+            lastVisit: new Date(patient.created_at).toISOString().split("T")[0],
+            condition: "General Care", // Would come from medical_history table
+            status: "stable",
+            riskLevel: "low",
+          }))
+          setPatients(transformedPatients.length > 0 ? transformedPatients : recentPatients)
+        }
+      } catch (error) {
+        console.error("Error:", error)
+        setPatients(recentPatients)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    loadPatients()
+  }, [])
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="h-16 border-b border-gray-200 bg-white px-6 flex items-center justify-between">
+      <header className="h-16 border-b border-border bg-card px-6 flex items-center justify-between">
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-purple-600 to-blue-600 rounded-lg flex items-center justify-center">
-              <Workflow className="w-4 h-4 text-white" />
+            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+              <Heart className="w-4 h-4 text-primary-foreground" />
             </div>
-            <span className="font-semibold text-gray-900">Emma</span>
+            <span className="font-semibold text-foreground">HealthCare EHR</span>
           </div>
-          <div className="text-sm text-gray-500">
-            <span>Dashboard</span> <span className="mx-1">/</span> <span>Overview</span>
+          <div className="text-sm text-muted-foreground">
+            <span>Dashboard</span> <span className="mx-1">/</span> <span>Patient Management</span>
           </div>
         </div>
 
         <div className="flex items-center gap-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
             <Input
-              placeholder="Search workflows, logs..."
-              className="pl-10 w-80 bg-gray-50 border-gray-200 focus:bg-white"
+              placeholder="Search patients, records..."
+              className="pl-10 w-80 bg-input border-border focus:bg-card"
             />
           </div>
           <Button variant="ghost" size="icon" className="relative">
             <Bell className="w-4 h-4" />
-            <span className="absolute -top-1 -right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+            <span className="absolute -top-1 -right-1 w-2 h-2 bg-destructive rounded-full"></span>
           </Button>
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button variant="ghost" size="icon">
                 <Avatar className="w-8 h-8">
                   <AvatarImage src="/placeholder.svg?height=32&width=32" />
-                  <AvatarFallback>AE</AvatarFallback>
+                  <AvatarFallback>DR</AvatarFallback>
                 </Avatar>
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>Alex Evans</DropdownMenuLabel>
+              <DropdownMenuLabel>Dr. Alex Evans</DropdownMenuLabel>
               <DropdownMenuSeparator />
               <DropdownMenuItem>Profile</DropdownMenuItem>
               <DropdownMenuItem>Settings</DropdownMenuItem>
@@ -222,11 +263,11 @@ export default function Dashboard() {
 
       <div className="flex">
         {/* Sidebar */}
-        <aside className="w-60 border-r border-gray-200 bg-white h-[calc(100vh-4rem)] overflow-y-auto">
+        <aside className="w-60 border-r border-border bg-card h-[calc(100vh-4rem)] overflow-y-auto">
           <div className="p-4">
             <div className="relative mb-6">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-              <Input placeholder="Search anything..." className="pl-10 bg-gray-50 border-gray-200 text-sm" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Input placeholder="Search anything..." className="pl-10 bg-input border-border text-sm" />
               <Button
                 size="icon"
                 variant="ghost"
@@ -239,42 +280,63 @@ export default function Dashboard() {
             <nav className="space-y-1">
               <Link
                 href="/"
-                className="flex items-center w-full justify-start bg-purple-50 text-purple-700 hover:bg-purple-100 px-3 py-2 rounded-md text-sm font-medium"
+                className="flex items-center w-full justify-start bg-sidebar-accent text-sidebar-accent-foreground hover:bg-sidebar-accent/80 px-3 py-2 rounded-md text-sm font-medium"
               >
                 <Home className="w-4 h-4 mr-3" />
-                Overview
+                Dashboard
               </Link>
               <Link
-                href="/workflows"
-                className="flex items-center w-full justify-start text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium"
+                href="/patients"
+                className="flex items-center w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 px-3 py-2 rounded-md text-sm font-medium"
               >
-                <Workflow className="w-4 h-4 mr-3" />
-                Workflows
+                <Users className="w-4 h-4 mr-3" />
+                Patients
+              </Link>
+              <Link
+                href="/clinical-ai"
+                className="flex items-center w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                <Brain className="w-4 h-4 mr-3" />
+                Clinical AI
+              </Link>
+              <Link
+                href="/documentation"
+                className="flex items-center w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                <FileText className="w-4 h-4 mr-3" />
+                Smart Documentation
+              </Link>
+              <Link
+                href="/communication"
+                className="flex items-center w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                <MessageSquare className="w-4 h-4 mr-3" />
+                Communication
+              </Link>
+              <Link
+                href="/appointments"
+                className="flex items-center w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                <Calendar className="w-4 h-4 mr-3" />
+                Appointments
+              </Link>
+              <Link
+                href="/records"
+                className="flex items-center w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                <FileText className="w-4 h-4 mr-3" />
+                Medical Records
               </Link>
               <Link
                 href="/analytics"
-                className="flex items-center w-full justify-start text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium"
+                className="flex items-center w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 px-3 py-2 rounded-md text-sm font-medium"
               >
                 <BarChart3 className="w-4 h-4 mr-3" />
                 Analytics
               </Link>
               <Link
-                href="/templates"
-                className="flex items-center w-full justify-start text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                <Database className="w-4 h-4 mr-3" />
-                Templates
-              </Link>
-              <Link
-                href="/team"
-                className="flex items-center w-full justify-start text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                <Users className="w-4 h-4 mr-3" />
-                Team
-              </Link>
-              <Link
                 href="/settings"
-                className="flex items-center w-full justify-start text-gray-600 hover:bg-gray-50 px-3 py-2 rounded-md text-sm font-medium"
+                className="flex items-center w-full justify-start text-sidebar-foreground hover:bg-sidebar-accent/50 px-3 py-2 rounded-md text-sm font-medium"
               >
                 <Settings className="w-4 h-4 mr-3" />
                 Settings
@@ -284,13 +346,13 @@ export default function Dashboard() {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 p-8 bg-gray-50">
+        <main className="flex-1 p-8 bg-background">
           {/* Quick Actions Bar */}
           <div className="mb-8">
             <div className="flex items-center justify-between mb-6">
               <div>
-                <h1 className="text-2xl font-semibold text-gray-900">Dashboard Overview</h1>
-                <p className="text-gray-600 mt-1">Monitor your workflows and system performance</p>
+                <h1 className="text-2xl font-semibold text-foreground">Patient Management Dashboard</h1>
+                <p className="text-muted-foreground mt-1">Monitor patient care and clinical workflows</p>
               </div>
               <div className="flex items-center gap-3">
                 <DropdownMenu>
@@ -305,47 +367,46 @@ export default function Dashboard() {
                     <DropdownMenuItem onClick={() => setSelectedPeriod("Last 90 days")}>Last 90 days</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
-                <Button className="bg-purple-600 hover:bg-purple-700">
-                  <Plus className="w-4 h-4 mr-2" />
-                  New Workflow
+                <Button className="bg-primary hover:bg-primary/90">
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Add Patient
                 </Button>
               </div>
             </div>
 
-            {/* Quick Action Cards */}
             <div className="grid grid-cols-3 gap-4 mb-8">
-              <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer border-gray-200">
+              <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer border-border">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
-                    <Plus className="w-6 h-6 text-green-600" />
+                  <div className="w-12 h-12 bg-chart-2/10 rounded-lg flex items-center justify-center">
+                    <UserPlus className="w-6 h-6 text-chart-2" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-gray-900">New workflow</h3>
-                    <p className="text-sm text-gray-600">Create a new automation</p>
+                    <h3 className="font-medium text-foreground">New Patient</h3>
+                    <p className="text-sm text-muted-foreground">Register new patient</p>
                   </div>
                 </div>
               </Card>
 
-              <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer border-gray-200">
+              <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer border-border">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center">
-                    <AlertTriangle className="w-6 h-6 text-red-600" />
+                  <div className="w-12 h-12 bg-chart-4/10 rounded-lg flex items-center justify-center">
+                    <AlertTriangle className="w-6 h-6 text-chart-4" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-gray-900">View breaches</h3>
-                    <p className="text-sm text-gray-600">Check failed workflows</p>
+                    <h3 className="font-medium text-foreground">Critical Alerts</h3>
+                    <p className="text-sm text-muted-foreground">Review urgent cases</p>
                   </div>
                 </div>
               </Card>
 
-              <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer border-gray-200">
+              <Card className="p-6 hover:shadow-md transition-shadow cursor-pointer border-border">
                 <div className="flex items-center gap-4">
-                  <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
-                    <RefreshCw className="w-6 h-6 text-blue-600" />
+                  <div className="w-12 h-12 bg-chart-5/10 rounded-lg flex items-center justify-center">
+                    <Calendar className="w-6 h-6 text-chart-5" />
                   </div>
                   <div>
-                    <h3 className="font-medium text-gray-900">Re-run last failed</h3>
-                    <p className="text-sm text-gray-600">Retry failed executions</p>
+                    <h3 className="font-medium text-foreground">Schedule Appointment</h3>
+                    <p className="text-sm text-muted-foreground">Book patient visit</p>
                   </div>
                 </div>
               </Card>
@@ -355,14 +416,14 @@ export default function Dashboard() {
           {/* Metrics Overview */}
           <div className="grid grid-cols-4 gap-6 mb-8">
             {metricsData.map((metric, index) => (
-              <Card key={index} className="border-gray-200">
+              <Card key={index} className="border-border">
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between mb-4">
-                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
-                      <metric.icon className="w-5 h-5 text-gray-600" />
+                    <div className="w-10 h-10 bg-muted rounded-lg flex items-center justify-center">
+                      <metric.icon className="w-5 h-5 text-muted-foreground" />
                     </div>
                     <div
-                      className={`flex items-center gap-1 text-sm ${metric.trend === "up" ? "text-green-600" : "text-red-600"}`}
+                      className={`flex items-center gap-1 text-sm ${metric.trend === "up" ? "text-chart-2" : "text-chart-4"}`}
                     >
                       {metric.trend === "up" ? (
                         <TrendingUp className="w-3 h-3" />
@@ -372,8 +433,8 @@ export default function Dashboard() {
                       {metric.change}
                     </div>
                   </div>
-                  <div className="text-2xl font-semibold text-gray-900 mb-1">{metric.value}</div>
-                  <div className="text-sm text-gray-600">{metric.label}</div>
+                  <div className="text-2xl font-semibold text-foreground mb-1">{metric.value}</div>
+                  <div className="text-sm text-muted-foreground">{metric.label}</div>
                 </CardContent>
               </Card>
             ))}
@@ -383,18 +444,18 @@ export default function Dashboard() {
             {/* Main Content Area */}
             <div className="col-span-2 space-y-8">
               {/* Charts Section */}
-              <Card className="border-gray-200">
+              <Card className="border-border">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-lg font-semibold">Performance Analytics</CardTitle>
-                      <CardDescription>Workflow execution trends and system metrics</CardDescription>
+                      <CardTitle className="text-lg font-semibold">Patient Care Analytics</CardTitle>
+                      <CardDescription>Patient volume, appointments, and alert trends</CardDescription>
                     </div>
-                    <Tabs defaultValue="workflows" className="w-auto">
+                    <Tabs defaultValue="patients" className="w-auto">
                       <TabsList className="grid w-full grid-cols-3">
-                        <TabsTrigger value="workflows">Workflows</TabsTrigger>
-                        <TabsTrigger value="sales">Sales</TabsTrigger>
-                        <TabsTrigger value="views">Views</TabsTrigger>
+                        <TabsTrigger value="patients">Patients</TabsTrigger>
+                        <TabsTrigger value="appointments">Appointments</TabsTrigger>
+                        <TabsTrigger value="alerts">Alerts</TabsTrigger>
                       </TabsList>
                     </Tabs>
                   </div>
@@ -402,47 +463,45 @@ export default function Dashboard() {
                 <CardContent>
                   <div className="h-80">
                     <ResponsiveContainer width="100%" height="100%">
-                      <AreaChart data={chartData}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#f3f4f6" />
-                        <XAxis dataKey="name" stroke="#6b7280" fontSize={12} />
-                        <YAxis stroke="#6b7280" fontSize={12} />
+                      <LineChart data={patientVitalsData}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="month" stroke="hsl(var(--muted-foreground))" fontSize={12} />
+                        <YAxis stroke="hsl(var(--muted-foreground))" fontSize={12} />
                         <Tooltip
                           contentStyle={{
-                            backgroundColor: "white",
-                            border: "1px solid #e5e7eb",
+                            backgroundColor: "hsl(var(--card))",
+                            border: "1px solid hsl(var(--border))",
                             borderRadius: "8px",
                             boxShadow: "0 4px 6px -1px rgba(0, 0, 0, 0.1)",
                           }}
                         />
-                        <Area
+                        <Line
                           type="monotone"
-                          dataKey="workflows"
-                          stroke="#8b5cf6"
-                          fill="#8b5cf6"
-                          fillOpacity={0.1}
+                          dataKey="patients"
+                          stroke="hsl(var(--primary))"
                           strokeWidth={2}
+                          dot={{ fill: "hsl(var(--primary))" }}
                         />
-                        <Area
+                        <Line
                           type="monotone"
-                          dataKey="sales"
-                          stroke="#3b82f6"
-                          fill="#3b82f6"
-                          fillOpacity={0.1}
+                          dataKey="appointments"
+                          stroke="hsl(var(--chart-2))"
                           strokeWidth={2}
+                          dot={{ fill: "hsl(var(--chart-2))" }}
                         />
-                      </AreaChart>
+                      </LineChart>
                     </ResponsiveContainer>
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Workflow Status Table */}
-              <Card className="border-gray-200">
+              {/* Patient Table */}
+              <Card className="border-border">
                 <CardHeader className="pb-4">
                   <div className="flex items-center justify-between">
                     <div>
-                      <CardTitle className="text-lg font-semibold">Recent Workflow Runs</CardTitle>
-                      <CardDescription>Monitor your workflow executions and performance</CardDescription>
+                      <CardTitle className="text-lg font-semibold">Recent Patients</CardTitle>
+                      <CardDescription>Monitor patient status and care progress</CardDescription>
                     </div>
                     <div className="flex items-center gap-2">
                       <Button variant="outline" size="sm">
@@ -459,62 +518,91 @@ export default function Dashboard() {
                 <CardContent className="p-0">
                   <Table>
                     <TableHeader>
-                      <TableRow className="bg-gray-50">
-                        <TableHead className="font-medium text-gray-700">Run ID</TableHead>
-                        <TableHead className="font-medium text-gray-700">Workflow</TableHead>
-                        <TableHead className="font-medium text-gray-700">Started</TableHead>
-                        <TableHead className="font-medium text-gray-700">Duration</TableHead>
-                        <TableHead className="font-medium text-gray-700">Status</TableHead>
-                        <TableHead className="font-medium text-gray-700">Error</TableHead>
-                        <TableHead className="font-medium text-gray-700 w-12"></TableHead>
+                      <TableRow className="bg-muted/50">
+                        <TableHead className="font-medium text-foreground">MRN</TableHead>
+                        <TableHead className="font-medium text-foreground">Patient Name</TableHead>
+                        <TableHead className="font-medium text-foreground">Age</TableHead>
+                        <TableHead className="font-medium text-foreground">Last Visit</TableHead>
+                        <TableHead className="font-medium text-foreground">Condition</TableHead>
+                        <TableHead className="font-medium text-foreground">Status</TableHead>
+                        <TableHead className="font-medium text-foreground">Risk Level</TableHead>
+                        <TableHead className="font-medium text-foreground w-12"></TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {workflowData.map((workflow) => (
-                        <TableRow key={workflow.id} className="hover:bg-gray-50">
-                          <TableCell className="font-mono text-sm">{workflow.id}</TableCell>
-                          <TableCell className="font-medium">{workflow.name}</TableCell>
-                          <TableCell className="text-gray-600">{workflow.started}</TableCell>
-                          <TableCell className="text-gray-600">{workflow.duration}</TableCell>
-                          <TableCell>
-                            {workflow.status === "running" && (
-                              <Badge variant="secondary" className="bg-blue-100 text-blue-700">
-                                <div className="w-2 h-2 bg-blue-500 rounded-full mr-2 animate-pulse"></div>
-                                Running
-                              </Badge>
-                            )}
-                            {workflow.status === "success" && (
-                              <Badge variant="secondary" className="bg-green-100 text-green-700">
-                                <CheckCircle className="w-3 h-3 mr-1" />
-                                Success
-                              </Badge>
-                            )}
-                            {workflow.status === "failed" && (
-                              <Badge variant="secondary" className="bg-red-100 text-red-700">
-                                <XCircle className="w-3 h-3 mr-1" />
-                                Failed
-                              </Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-gray-600 max-w-48 truncate">{workflow.error || "None"}</TableCell>
-                          <TableCell>
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="w-8 h-8">
-                                  <MoreHorizontal className="w-4 h-4" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem>View Details</DropdownMenuItem>
-                                <DropdownMenuItem>Re-run</DropdownMenuItem>
-                                <DropdownMenuItem>View Logs</DropdownMenuItem>
-                                <DropdownMenuSeparator />
-                                <DropdownMenuItem className="text-red-600">Cancel</DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
+                      {loading ? (
+                        <TableRow>
+                          <TableCell colSpan={8} className="text-center py-8">
+                            Loading patients...
                           </TableCell>
                         </TableRow>
-                      ))}
+                      ) : (
+                        patients.map((patient) => (
+                          <TableRow key={patient.id} className="hover:bg-muted/50">
+                            <TableCell className="font-mono text-sm">{patient.mrn}</TableCell>
+                            <TableCell className="font-medium">{patient.name}</TableCell>
+                            <TableCell className="text-muted-foreground">{patient.age}</TableCell>
+                            <TableCell className="text-muted-foreground">{patient.lastVisit}</TableCell>
+                            <TableCell className="text-muted-foreground">{patient.condition}</TableCell>
+                            <TableCell>
+                              {patient.status === "stable" && (
+                                <Badge variant="secondary" className="bg-chart-2/10 text-chart-2">
+                                  <Activity className="w-3 h-3 mr-1" />
+                                  Stable
+                                </Badge>
+                              )}
+                              {patient.status === "critical" && (
+                                <Badge variant="secondary" className="bg-chart-4/10 text-chart-4">
+                                  <AlertTriangle className="w-3 h-3 mr-1" />
+                                  Critical
+                                </Badge>
+                              )}
+                              {patient.status === "monitoring" && (
+                                <Badge variant="secondary" className="bg-chart-3/10 text-chart-3">
+                                  <Clock className="w-3 h-3 mr-1" />
+                                  Monitoring
+                                </Badge>
+                              )}
+                              {patient.status === "improving" && (
+                                <Badge variant="secondary" className="bg-chart-2/10 text-chart-2">
+                                  <TrendingUp className="w-3 h-3 mr-1" />
+                                  Improving
+                                </Badge>
+                              )}
+                            </TableCell>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  patient.riskLevel === "high"
+                                    ? "border-chart-4 text-chart-4"
+                                    : patient.riskLevel === "medium"
+                                      ? "border-chart-3 text-chart-3"
+                                      : "border-chart-2 text-chart-2"
+                                }
+                              >
+                                {patient.riskLevel}
+                              </Badge>
+                            </TableCell>
+                            <TableCell>
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" size="icon" className="w-8 h-8">
+                                    <MoreHorizontal className="w-4 h-4" />
+                                  </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem>View Details</DropdownMenuItem>
+                                  <DropdownMenuItem>Edit Record</DropdownMenuItem>
+                                  <DropdownMenuItem>Schedule Appointment</DropdownMenuItem>
+                                  <DropdownMenuSeparator />
+                                  <DropdownMenuItem>View History</DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </TableCell>
+                          </TableRow>
+                        ))
+                      )}
                     </TableBody>
                   </Table>
                 </CardContent>
@@ -523,54 +611,58 @@ export default function Dashboard() {
 
             {/* Right Sidebar */}
             <div className="space-y-6">
-              {/* Account Balance */}
-              <Card className="border-gray-200">
+              <Card className="border-border">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold">Account Balance</CardTitle>
+                  <CardTitle className="text-lg font-semibold">Department Status</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-3xl font-semibold text-gray-900 mb-4">$1,423.25</div>
-                  <div className="space-y-3 mb-4">
+                  <div className="space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Monthly Credits</span>
-                      <span className="text-sm font-medium">$500.00</span>
+                      <span className="text-sm text-muted-foreground">Bed Occupancy</span>
+                      <span className="text-sm font-medium">85%</span>
                     </div>
+                    <Progress value={85} className="h-2" />
+
                     <div className="flex justify-between items-center">
-                      <span className="text-sm text-gray-600">Usage This Month</span>
-                      <span className="text-sm font-medium">$76.75</span>
+                      <span className="text-sm text-muted-foreground">Staff Availability</span>
+                      <span className="text-sm font-medium">92%</span>
                     </div>
-                    <Progress value={15} className="h-2" />
-                  </div>
-                  <div className="flex gap-2">
-                    <Button size="sm" className="flex-1">
-                      Add Credit
-                    </Button>
-                    <Button size="sm" variant="outline" className="flex-1 bg-transparent">
-                      Transfer
-                    </Button>
+                    <Progress value={92} className="h-2" />
+
+                    <div className="flex justify-between items-center">
+                      <span className="text-sm text-muted-foreground">Equipment Status</span>
+                      <span className="text-sm font-medium">98%</span>
+                    </div>
+                    <Progress value={98} className="h-2" />
                   </div>
                 </CardContent>
               </Card>
 
-              {/* Recent Activity */}
-              <Card className="border-gray-200">
+              {/* Recent Alerts */}
+              <Card className="border-border">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
+                  <CardTitle className="text-lg font-semibold">Recent Alerts</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="space-y-0">
-                    {recentActivity.map((activity, index) => (
+                    {recentAlerts.map((alert, index) => (
                       <div
                         key={index}
-                        className="flex items-center gap-3 p-4 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                        className="flex items-center gap-3 p-4 hover:bg-muted/50 border-b border-border last:border-b-0"
                       >
                         <div
-                          className={`w-2 h-2 rounded-full ${activity.status === "success" ? "bg-green-500" : "bg-red-500"}`}
+                          className={`w-2 h-2 rounded-full ${
+                            alert.priority === "high"
+                              ? "bg-chart-4"
+                              : alert.priority === "medium"
+                                ? "bg-chart-3"
+                                : "bg-chart-2"
+                          }`}
                         ></div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm text-gray-900 truncate">{activity.workflow}</div>
-                          <div className="text-xs text-gray-600">
-                            {activity.time} • {activity.duration}
+                          <div className="font-medium text-sm text-foreground truncate">{alert.alert}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {alert.patient} • {alert.time}
                           </div>
                         </div>
                       </div>
@@ -579,17 +671,17 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
 
-              {/* Team Status */}
-              <Card className="border-gray-200">
+              {/* Healthcare Team Status */}
+              <Card className="border-border">
                 <CardHeader className="pb-4">
-                  <CardTitle className="text-lg font-semibold">Team Status</CardTitle>
+                  <CardTitle className="text-lg font-semibold">Healthcare Team</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="space-y-0">
-                    {teamMembers.map((member, index) => (
+                    {healthcareTeam.map((member, index) => (
                       <div
                         key={index}
-                        className="flex items-center gap-3 p-4 hover:bg-gray-50 border-b border-gray-100 last:border-b-0"
+                        className="flex items-center gap-3 p-4 hover:bg-muted/50 border-b border-border last:border-b-0"
                       >
                         <div className="relative">
                           <Avatar className="w-8 h-8">
@@ -602,15 +694,15 @@ export default function Dashboard() {
                             </AvatarFallback>
                           </Avatar>
                           <div
-                            className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-white ${
-                              member.status === "online" ? "bg-green-500" : "bg-gray-400"
+                            className={`absolute -bottom-0.5 -right-0.5 w-3 h-3 rounded-full border-2 border-card ${
+                              member.status === "online" ? "bg-chart-2" : "bg-muted-foreground"
                             }`}
                           ></div>
                         </div>
                         <div className="flex-1 min-w-0">
-                          <div className="font-medium text-sm text-gray-900">{member.name}</div>
-                          <div className="text-xs text-gray-600">
-                            {member.role} • {member.availability}
+                          <div className="font-medium text-sm text-foreground">{member.name}</div>
+                          <div className="text-xs text-muted-foreground">
+                            {member.role} • {member.availability} • {member.patients} patients
                           </div>
                         </div>
                       </div>
