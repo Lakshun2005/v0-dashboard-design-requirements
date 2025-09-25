@@ -30,7 +30,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { DashboardLayout } from "@/components/dashboard-layout"
 
 const templates = [
   {
@@ -132,10 +131,9 @@ export default function TemplatesPage() {
   const featuredTemplates = templates.filter((t) => t.featured)
 
   return (
-    <DashboardLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Templates</h1>
             <p className="text-gray-600 mt-1">Discover and use pre-built workflow templates</p>
@@ -349,6 +347,5 @@ export default function TemplatesPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
   )
 }
