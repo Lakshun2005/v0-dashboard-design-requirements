@@ -2,27 +2,63 @@
 DROP POLICY IF EXISTS "Users can view their own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
+DROP POLICY IF EXISTS "Admins can do anything to profiles" ON public.profiles;
+
 DROP POLICY IF EXISTS "Healthcare providers can view all patients" ON public.patients;
 DROP POLICY IF EXISTS "Healthcare providers can insert patients" ON public.patients;
 DROP POLICY IF EXISTS "Healthcare providers can update patients" ON public.patients;
+DROP POLICY IF EXISTS "Admins can do anything" ON public.patients;
+DROP POLICY IF EXISTS "Doctors and nurses can view patients" ON public.patients;
+DROP POLICY IF EXISTS "Doctors and nurses can insert new patients" ON public.patients;
+DROP POLICY IF EXISTS "Doctors can update patient records" ON public.patients;
+
 DROP POLICY IF EXISTS "Healthcare providers can view medical history" ON public.medical_history;
 DROP POLICY IF EXISTS "Healthcare providers can insert medical history" ON public.medical_history;
 DROP POLICY IF EXISTS "Healthcare providers can update medical history" ON public.medical_history;
+DROP POLICY IF EXISTS "Admins can do anything" ON public.medical_history;
+DROP POLICY IF EXISTS "Doctors and nurses can view medical history" ON public.medical_history;
+DROP POLICY IF EXISTS "Doctors can insert new medical history" ON public.medical_history;
+DROP POLICY IF EXISTS "Doctors can update medical history" ON public.medical_history;
+
 DROP POLICY IF EXISTS "Healthcare providers can view medications" ON public.medications;
 DROP POLICY IF EXISTS "Healthcare providers can insert medications" ON public.medications;
 DROP POLICY IF EXISTS "Healthcare providers can update medications" ON public.medications;
+DROP POLICY IF EXISTS "Admins can do anything" ON public.medications;
+DROP POLICY IF EXISTS "Doctors and nurses can view medications" ON public.medications;
+DROP POLICY IF EXISTS "Doctors can prescribe medications" ON public.medications;
+DROP POLICY IF EXISTS "Doctors can update prescriptions" ON public.medications;
+
 DROP POLICY IF EXISTS "Healthcare providers can view vital signs" ON public.vital_signs;
 DROP POLICY IF EXISTS "Healthcare providers can insert vital signs" ON public.vital_signs;
 DROP POLICY IF EXISTS "Healthcare providers can update vital signs" ON public.vital_signs;
+DROP POLICY IF EXISTS "Admins can do anything" ON public.vital_signs;
+DROP POLICY IF EXISTS "Doctors and nurses can view vital signs" ON public.vital_signs;
+DROP POLICY IF EXISTS "Nurses and technicians can record vital signs" ON public.vital_signs;
+DROP POLICY IF EXISTS "Nurses and technicians can update vital signs" ON public.vital_signs;
+
 DROP POLICY IF EXISTS "Healthcare providers can view appointments" ON public.appointments;
 DROP POLICY IF EXISTS "Healthcare providers can insert appointments" ON public.appointments;
 DROP POLICY IF EXISTS "Healthcare providers can update appointments" ON public.appointments;
+DROP POLICY IF EXISTS "Admins can do anything" ON public.appointments;
+DROP POLICY IF EXISTS "Doctors and nurses can view appointments" ON public.appointments;
+DROP POLICY IF EXISTS "Doctors and nurses can create appointments" ON public.appointments;
+DROP POLICY IF EXISTS "Doctors and nurses can update appointments" ON public.appointments;
+
 DROP POLICY IF EXISTS "Healthcare providers can view clinical notes" ON public.clinical_notes;
 DROP POLICY IF EXISTS "Healthcare providers can insert clinical notes" ON public.clinical_notes;
 DROP POLICY IF EXISTS "Healthcare providers can update clinical notes" ON public.clinical_notes;
+DROP POLICY IF EXISTS "Admins can do anything" ON public.clinical_notes;
+DROP POLICY IF EXISTS "Doctors and nurses can view clinical notes" ON public.clinical_notes;
+DROP POLICY IF EXISTS "Doctors and nurses can create clinical notes" ON public.clinical_notes;
+DROP POLICY IF EXISTS "Doctors can update clinical notes" ON public.clinical_notes;
+
 DROP POLICY IF EXISTS "Healthcare providers can view patient alerts" ON public.patient_alerts;
 DROP POLICY IF EXISTS "Healthcare providers can insert patient alerts" ON public.patient_alerts;
 DROP POLICY IF EXISTS "Healthcare providers can update patient alerts" ON public.patient_alerts;
+DROP POLICY IF EXISTS "Admins can do anything" ON public.patient_alerts;
+DROP POLICY IF EXISTS "Doctors and nurses can view patient alerts" ON public.patient_alerts;
+DROP POLICY IF EXISTS "Doctors and nurses can create patient alerts" ON public.patient_alerts;
+DROP POLICY IF EXISTS "Doctors and nurses can update patient alerts" ON public.patient_alerts;
 
 -- Helper function to get the role of the current user
 CREATE OR REPLACE FUNCTION get_my_role()
@@ -37,6 +73,8 @@ CREATE POLICY "Users can view their own profile" ON public.profiles
   FOR SELECT USING (auth.uid() = id);
 CREATE POLICY "Users can update their own profile" ON public.profiles
   FOR UPDATE USING (auth.uid() = id);
+CREATE POLICY "Users can insert their own profile" ON public.profiles
+  FOR INSERT WITH CHECK (auth.uid() = id);
 CREATE POLICY "Admins can do anything to profiles" ON public.profiles
   FOR ALL USING (get_my_role() = 'admin');
 
