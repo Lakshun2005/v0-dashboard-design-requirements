@@ -26,6 +26,8 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { createClient } from "@/lib/supabase/client"
 import { AddPatientDialog } from "@/components/add-patient-dialog"
+import { EditPatientDialog } from "@/components/edit-patient-dialog"
+import { toast } from "sonner"
 
 // Sample data structure - align with your actual data
 const recentPatients = [
@@ -47,6 +49,18 @@ export default function PatientsPage() {
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState("")
   const [isAddPatientDialogOpen, setIsAddPatientDialogOpen] = useState(false)
+  const [isEditPatientDialogOpen, setIsEditPatientDialogOpen] = useState(false)
+  const [selectedPatient, setSelectedPatient] = useState(null)
+
+  const handleEditPatient = (patient) => {
+    setSelectedPatient(patient)
+    setIsEditPatientDialogOpen(true)
+  }
+
+  const handlePatientUpdated = (updatedPatient) => {
+    setPatients(patients.map((p) => (p.id === updatedPatient.id ? updatedPatient : p)))
+    loadPatients() // Refresh the list
+  }
 
   const handleDeletePatient = async (patientId) => {
     if (!window.confirm("Are you sure you want to delete this patient? This action cannot be undone.")) {
@@ -57,10 +71,9 @@ export default function PatientsPage() {
     const { error } = await supabase.from("patients").delete().eq("id", patientId)
 
     if (error) {
-      console.error("Error deleting patient:", error)
-      // You might want to show a toast notification here
+      toast.error("Failed to delete patient.", { description: error.message })
     } else {
-      // Refresh the patient list
+      toast.success("Patient deleted successfully.")
       loadPatients()
     }
   }
@@ -228,7 +241,7 @@ export default function PatientsPage() {
                         </DropdownMenuTrigger>
                         <DropdownMenuContent align="end">
                           <DropdownMenuItem>View Details</DropdownMenuItem>
-                          <DropdownMenuItem>Edit Record</DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditPatient(patient)}>Edit Record</DropdownMenuItem>
                           <DropdownMenuSeparator />
                           <DropdownMenuItem onClick={() => handleDeletePatient(patient.id)}>Delete Patient</DropdownMenuItem>
                         </DropdownMenuContent>
@@ -247,6 +260,14 @@ export default function PatientsPage() {
       onOpenChange={setIsAddPatientDialogOpen}
       onPatientAdded={loadPatients}
     />
+    {selectedPatient && (
+      <EditPatientDialog
+        patient={selectedPatient}
+        open={isEditPatientDialogOpen}
+        onOpenChange={setIsEditPatientDialogOpen}
+        onPatientUpdated={handlePatientUpdated}
+      />
+    )}
   </>
   )
 }
