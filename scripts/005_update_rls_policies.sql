@@ -28,9 +28,9 @@ DROP POLICY IF EXISTS "Healthcare providers can update patient alerts" ON public
 CREATE OR REPLACE FUNCTION get_my_role()
 RETURNS TEXT AS $$
 BEGIN
-  RETURN (SELECT role FROM public.profiles WHERE id = auth.uid());
+  RETURN auth.jwt() ->> 'user_role';
 END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
+$$ LANGUAGE plpgsql;
 
 -- RLS Policies for profiles
 CREATE POLICY "Users can view their own profile" ON public.profiles
