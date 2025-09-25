@@ -15,7 +15,6 @@ import {
   DropdownMenuTrigger,
   DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu"
-import { DashboardLayout } from "@/components/dashboard-layout"
 
 const workflows = [
   {
@@ -87,10 +86,9 @@ export default function WorkflowsPage() {
   const [searchQuery, setSearchQuery] = useState("")
 
   return (
-    <DashboardLayout>
-      <div className="space-y-8">
-        {/* Header */}
-        <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex items-center justify-between">
           <div>
             <h1 className="text-2xl font-semibold text-gray-900">Workflows</h1>
             <p className="text-gray-600 mt-1">Manage and monitor your automation workflows</p>
@@ -312,6 +310,5 @@ export default function WorkflowsPage() {
           </TabsContent>
         </Tabs>
       </div>
-    </DashboardLayout>
   )
 }
