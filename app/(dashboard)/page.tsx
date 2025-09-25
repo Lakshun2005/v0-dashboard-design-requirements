@@ -121,7 +121,7 @@ export default function Dashboard() {
 
     // Fetch providers
     const { data: providerData, error: providerError } = await supabase
-      .from("providers")
+      .from("profiles")
       .select("*")
       .limit(4)
 
@@ -134,7 +134,7 @@ export default function Dashboard() {
 
     // Fetch metrics
     const { data: patientCount } = await supabase.from("patients").select("*", { count: "exact", head: true })
-    const { data: providerCount } = await supabase.from("providers").select("*", { count: "exact", head: true })
+    const { data: providerCount } = await supabase.from("profiles").select("*", { count: "exact", head: true })
 
     setMetrics((prev) => ({
       ...prev,
