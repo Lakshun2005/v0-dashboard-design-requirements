@@ -218,7 +218,7 @@ const NotificationMenu = () => {
     const fetchAlerts = async () => {
       const supabase = createClient()
       const { data, error } = await supabase
-        .from("alerts")
+        .from("patient_alerts")
         .select("*, patients(first_name, last_name)")
         .order("created_at", { ascending: false })
         .limit(5)
